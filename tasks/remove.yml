@@ -1,0 +1,14 @@
+---
+- name: remove_docker_container {{ docker_container_codeserver_name }}
+  community.docker.docker_container: 
+    name: "{{ docker_container_codeserver_name }}"    
+    container_default_behavior: no_defaults
+    keep_volumes: "{{ docker_container_codeserver_keep_volumes | default(true) }}"
+    state: absent
+
+- name: remove_docker_network {{ docker_network_codeserver_name }}
+  community.docker.docker_network:
+    name: "{{ docker_network_codeserver_name }}"
+    force: yes
+    state: absent
+...

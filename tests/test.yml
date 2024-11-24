@@ -1,0 +1,63 @@
+---
+- hosts: localhost
+  remote_user: root
+  vars:
+    docker_container__base__dns_domain: "acme.org"
+    docker_container_codeserver_mailer_host: "mail.{{ docker_container__base__dns_domain }}"
+    docker_container_codeserver_mailer_from: "no-reply@{{ docker_container__base__dns_domain }}"
+    docker_container_codeserver_mailer_username: "no-reply@{{ docker_container__base__dns_domain }}"
+    docker_container_codeserver_mailer_password: "somepassword"
+
+    docker_network_traefik_name: "traefik_proxy_net"
+
+    docker_container_codeserver_server_domain: "{{ docker_container_codeserver_name }}.{{ docker_container__base__dns_domain }}"
+    
+    docker_container_codeserver_env:
+      APP_NAME: "codeserver: git"
+      RUN_USER: "git"
+      codeserver__log__ROOT_PATH: "/data/codeserver/log"
+      codeserver__repository__ROOT: "/data/git/repositories"
+      codeserver__server__DOMAIN: "{{ docker_container_codeserver_server_domain }}"
+      codeserver__server__ROOT_URL: "https://{{ docker_container_codeserver_server_domain }}"
+      codeserver__server__HTTP_PORT: "3000"
+      codeserver__service__DISABLE_REGISTRATION: "true"
+      codeserver__mailer__ENABLED: "true"
+      codeserver__mailer__FROM: "{{ docker_container_codeserver_mailer_from }}"
+      codeserver__mailer__MAILER_TYPE: "smtp"
+      codeserver__mailer__HOST: "{{ docker_container_codeserver_mailer_host }}"
+      codeserver__mailer__IS_TLS: "true"
+      codeserver__mailer__USER: "{{ docker_container_codeserver_mailer_username }}"
+      codeserver__mailer__PASSWD: "{{ docker_container_codeserver_mailer_password }}"
+      codeserver__database__DB_TYPE: "sqlite3"
+      codeserver__database__PATH: "/data/codeserver/codeserver.db"
+      codeserver__webhook__SKIP_TLS_VERIFY: "true"
+      codeserver__webhook__ALLOWED_HOST_LIST: "*"
+
+    docker_container_codeserver_labels:
+      traefik.enable: "true"
+      traefik.http.routers.codeserver.rule: "Host(`{{ docker_container_codeserver_server_domain }}`)"
+      traefik.http.routers.codeserver.entrypoints: http
+      traefik.http.routers.codeserver.service: codeserver
+      #traefik.http.routers.codeserver.middlewares: https_redirect_permanent@file
+      # HTTPS
+      traefik.http.routers.codeserver_ssl.rule: "Host(`{{ docker_container_codeserver_server_domain }}`)"
+      traefik.http.routers.codeserver_ssl.entrypoints: https
+      traefik.http.routers.codeserver_ssl.service: codeserver
+      #traefik.http.routers.codeserver_ssl.tls: "true"
+      # traefik.http.routers.codeserver_ssl.tls.certResolver: le
+      traefik.http.routers.codeserver_ssl.tls.options: nosni@file
+      # traefik.http.routers.codeserver_ssl.middlewares: "hsts@file"
+      # Service
+      traefik.http.services.codeserver.loadbalancer.server.port: "3000"
+
+    docker_container_codeserver_volumes:
+      - "{{ docker_container_codeserver_volume_dir }}/data:/data"
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+
+    docker_container_codeserver_networks:
+      - name: "{{ docker_network_codeserver_name }}"
+      - name: "{{ docker_network_traefik_name }}"
+
+  roles:
+    - ansible-role-docker-container-codeserver

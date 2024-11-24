@@ -1,0 +1,66 @@
+---
+# tasks file for ansible-role-docker-container-codeserver
+
+- name: docker_container - {{ docker_container_codeserver_volume_dir }}
+  ansible.builtin.file:
+    path: "{{ docker_container_codeserver_volume_dir }}/{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{item.group | default('root') }}"
+    mode: "{{ item.mode | default('755') }}"
+  loop:
+    - { path: ".config", owner: "1000", group: "1000" }
+    - { path: ".local", owner: "1000", group: "1000" }
+    - { path: "project", owner: "1000", group: "1000" }
+
+- name: docker_image pull {{ docker_image_codeserver_name }}
+  community.docker.docker_image:
+    name: '{{ docker_image_codeserver_name }}'
+    source: pull
+    # Select platform for pulling. If not specified, will pull whatever docker prefers.
+    pull:
+      platform: amd64
+  when: 
+    - docker_image_codeserver_pull
+
+- name: docker_network {{ docker_container_codeserver_name }}
+  community.docker.docker_network:
+    name: "{{ docker_network_codeserver_name }}"
+    driver: "{{ docker_network_codeserver_driver | default('bridge') }}"
+    attachable: "{{ docker_network_codeserver_attachable | default(true) }}"
+    enable_ipv6: "{{ docker_network_codeserver_enable_ipv6 | default(false) }}"
+    internal: "{{ docker_network_codeserver_internal | default(false) }}"
+    state: present
+
+
+- name: docker_container {{ docker_container_codeserver_name }}
+  community.docker.docker_container:
+    command: "{{ docker_container_codeserver_command | default (omit) }}"
+    name: "{{ docker_container_codeserver_name }}"
+    comparisons: "{{ docker_container_codeserver_comparisons }}"
+    image: "{{ docker_container_codeserver_image }}"
+    state: "{{ docker_container_codeserver_state | default('started') }}"
+    recreate: "{{ docker_container_codeserver_recreate | default(false) }}"
+    restart: "{{ docker_container_codeserver_restart | default(false) }}"
+    restart_policy: "{{ docker_container_codeserver_restart_policy | default('always') }}"
+    container_default_behavior: no_defaults
+    auto_remove: "{{ docker_container_codeserver_auto_remove | default(false) }}"
+    detach: "{{ docker_container_codeserver_detach | default(true) }}"
+    init: "{{ docker_container_codeserver_init | default(false) }}"
+    interactive: "{{ docker_container_codeserver_interactive | default(false) }}"
+    keep_volumes: "{{ docker_container_codeserver_keep_volumes | default(true) }}"
+    memory: "{{ docker_container_codeserver_memory | default('0') }}"
+    paused: "{{ docker_container_codeserver_paused | default(false) }}"
+    privileged: "{{ docker_container_codeserver_privileged | default(false) }}"
+    read_only: "{{ docker_container_codeserver_read_only | default(false) }}"
+    tty: "{{ docker_container_codeserver_tty | default(false) }}"
+    env_file: "{{ docker_container_codeserver_env_file | default(omit) }}"
+    env: "{{ docker_container_codeserver_env | default(omit) }}"
+    volumes: "{{ docker_container_codeserver_volumes | default(omit) }}"
+    labels: "{{ docker_container_codeserver_labels | default(omit) }}"
+    networks_cli_compatible: "{{ docker_container_codeserver_networks_cli_compatible | default(true) }}"
+    network_mode: "{{ docker_network_codeserver_name }}"
+    pull: "{{ docker_container_codeserver_pull | default(false) }}"
+    networks: "{{ docker_container_codeserver_networks }}"
+    published_ports: "{{ docker_container_codeserver_ports | default(omit) }}"
+...

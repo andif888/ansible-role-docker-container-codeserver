@@ -1,0 +1,76 @@
+---
+# @tag docker-container-prereq-all:description: Ensure all pre-requisites are installed
+# @tag docker-container-prereq-codeserver:description: Ensure all pre-requisites for codeserver are installed
+- ansible.builtin.import_tasks: "{{ role_path }}/tasks/prereq.yml"
+  tags:
+    - docker-container-prereq-all
+    - docker-container-prereq-codeserver
+
+# @tag docker-container-restore-all:description: Run restic restore for all restic enabled containers.
+# @tag docker-container-restore-codeserver:description: Run restic restore for codeserver if restic is enabled.
+- ansible.builtin.import_tasks: "{{ role_path }}/tasks/restore.yml"
+  tags:
+    - never
+    - docker-container-restore-all
+    - docker-container-restore-codeserver
+  when:
+    - docker_container_codeserver_restic_enable
+
+# @tag docker-container-setup-all:description: Run setup task for all containers.
+# @tag docker-container-setup-codeserver:description: Run setup task for codeserver.
+- ansible.builtin.import_tasks: "{{ role_path }}/tasks/setup.yml"
+  tags:
+    - docker-container-setup-all
+    - docker-container-setup-codeserver
+    - docker-container-restore-all
+    - docker-container-restore-codeserver
+
+# @tag docker-container-backup-init-all:description: Run init backup task for all container.
+# @tag docker-container-backup-init-codeserver:description: Run init backup task for codeserver if restic is enabled.
+- ansible.builtin.import_tasks: "{{ role_path }}/tasks/backup_init.yml"
+  tags:
+    - docker-container-setup-all
+    - docker-container-setup-codeserver
+    - docker-container-backup-init-all
+    - docker-container-backup-init-codeserver
+  when:
+    - docker_container_codeserver_restic_enable
+
+# @tag docker-container-remove-all:description: Remove all containers.
+# @tag docker-container-remove-codeserver:description: Remove codeserver.
+- ansible.builtin.import_tasks: "{{ role_path }}/tasks/remove.yml"
+  tags:
+    - never
+    - docker-container-remove-all
+    - docker-container-remove-codeserver
+    - docker-container-purge-all
+    - docker-container-purge-codeserver
+
+# @tag docker-container-purge-all:description: Remove all containers and delete volume mounts.
+# @tag docker-container-purge-codeserver:description: Remove codeserver and delete volume mounts.
+- ansible.builtin.import_tasks: "{{ role_path }}/tasks/purge.yml"
+  tags:
+    - never
+    - docker-container-purge-all
+    - docker-container-purge-codeserver
+
+# @tag docker-container-backup-all:description: Backup all containers' volume mounts.
+# @tag docker-container-backup-codeserver:description: Backup codeserver volume mounts.
+- ansible.builtin.import_tasks: "{{ role_path }}/tasks/backup.yml"
+  tags:
+    - never
+    - docker-container-backup-all
+    - docker-container-backup-codeserver
+  when:
+    - docker_container_codeserver_restic_enable
+
+# @tag docker-container-backup-list-all:description: List all containers' backups.
+# @tag docker-container-backup-list-codeserver:description: List codeserver backups.
+- ansible.builtin.import_tasks: "{{ role_path }}/tasks/backup_list.yml"
+  tags:
+    - never
+    - docker-container-backup-list-all
+    - docker-container-backup-list-codeserver
+  when:
+    - docker_container_codeserver_restic_enable
+...
